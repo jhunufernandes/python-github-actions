@@ -1,0 +1,26 @@
+name: deps
+on:
+  workflow_call:
+    inputs:
+      pip_args:
+        required: false
+        type: string
+jobs:
+  install-python-deps:
+    if: inputs.pip_args
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ "{{" }} inputs.python_version || '3.11' {{ "}}" }}
+      - run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install .[${{ "{{" }} inputs.pip_args {{ "}}" }}]
+      - run: |
+          zip -r venv.zip .venv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-deps-${{ "{{" }} inputs.pip_args {{ "}}" }}
+          path: venv.zip
