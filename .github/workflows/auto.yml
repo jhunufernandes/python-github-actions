@@ -1,7 +1,10 @@
 name: auto
 on:
-  issues:
-    types: [opened]
+  workflow_call:
+    inputs:
+      pr_destiny:
+        required: true
+        type: string
 jobs:
   create-branch:
     runs-on: ubuntu-latest
@@ -47,7 +50,7 @@ jobs:
                 repo: context.repo.repo,
                 title: `Draft PR for issue #${context.issue.number}`,
                 head: `issue/${{ github.event.issue.number }}-${{ github.event.issue.title }}`,
-                base: 'development',
+                base: '${{ inputs.pr_destiny }}',
                 draft: true
               });
               console.log(`Draft PR created for issue #${context.issue.number}`);
