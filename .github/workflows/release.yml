@@ -10,7 +10,7 @@ jobs:
         run: |
           echo "release_version=$(grep version pyproject.toml | awk -F'\"' '{print $2}')" >> $GITHUB_OUTPUT
     outputs:
-      release_version: ${{ "{{" }} steps.version.outputs.release_version {{ "}}" }}
+      release_version: ${{ steps.version.outputs.release_version }}
   run-tag:
     if: github.event.head_commit.message != 'Automated tag'
     needs:
@@ -24,7 +24,7 @@ jobs:
           git config --global user.name github-actions[bot]
           git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
       - run: |
-          git tag --force v${{ "{{" }} needs.get-release-version.outputs.release_version {{ "}}" }}
+          git tag --force v${{ needs.get-release-version.outputs.release_version }}
           git push
         id: tag-id
   run-release:
@@ -40,10 +40,10 @@ jobs:
         id: version
       - uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ "{{" }} secrets.GITHUB_TOKEN {{ "}}" }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ "{{" }} needs.get-release-version.outputs.release_version {{ "}}" }}
-          release_name: Release ${{ "{{" }} needs.get-release-version.outputs.release_version {{ "}}" }}
-          body: ${{ "{{" }} github.event.head_commit.message {{ "}}" }}
+          tag_name: ${{ needs.get-release-version.outputs.release_version }}
+          release_name: Release ${{ needs.get-release-version.outputs.release_version }}
+          body: ${{ github.event.head_commit.message }}
           draft: false
           prerelease: false
