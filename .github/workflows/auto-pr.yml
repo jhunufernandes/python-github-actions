@@ -20,7 +20,7 @@ jobs:
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           
           # Check if PR already exists
-          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base development --json number --jq '.[0].number')
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base development --state open --json number --jq '.[0].number')
           
           if [ -z "$EXISTING_PR" ]; then
             echo "Creating PR from $BRANCH_NAME to development"
@@ -42,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check if PR already exists from development to main
-          EXISTING_PR=$(gh pr list --head development --base main --json number --jq '.[0].number')
+          EXISTING_PR=$(gh pr list --head development --base main --state open --json number --jq '.[0].number')
           
           if [ -z "$EXISTING_PR" ]; then
             echo "Creating PR from development to main"
