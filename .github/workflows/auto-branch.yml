@@ -1,0 +1,46 @@
+name: auto-branch
+on:
+  issues:
+    types: [opened]
+jobs:
+  create-branch-and-assign:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create branch for issue
+        run: |
+          # Get issue number and title
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          
+          # Create slug from issue title (lowercase, replace spaces with hyphens, remove special chars)
+          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | sed 's/ \+/-/g' | cut -c1-50)
+          
+          # Create branch name
+          BRANCH_NAME="issue/${ISSUE_NUMBER}-${SLUG}"
+          
+          echo "Creating branch: $BRANCH_NAME"
+          
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push branch
+          git checkout -b "$BRANCH_NAME"
+          git push origin "$BRANCH_NAME"
+          
+          echo "Branch $BRANCH_NAME created successfully"
+      - name: Assign issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [context.repo.owner]
+            });
+            console.log(`Issue #${context.issue.number} assigned to ${context.repo.owner}`);
