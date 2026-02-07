@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       pip_args:
-        required: false
+        required: true
         type: string
 jobs:
   install-python-deps:
