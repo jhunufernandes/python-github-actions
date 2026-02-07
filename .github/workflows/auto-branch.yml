@@ -17,7 +17,12 @@ jobs:
           ISSUE_TITLE="${{ github.event.issue.title }}"
           
           # Create slug from issue title (lowercase, replace spaces with hyphens, remove special chars)
-          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | sed 's/ \+/-/g' | cut -c1-50)
+          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 -]//g' | sed 's/ \+/-/g' | sed 's/^-*\|-*$//g' | cut -c1-50)
+          
+          # Ensure SLUG is not empty
+          if [ -z "$SLUG" ]; then
+            SLUG="untitled"
+          fi
           
           # Create branch name
           BRANCH_NAME="issue/${ISSUE_NUMBER}-${SLUG}"
