@@ -8,7 +8,8 @@ jobs:
       - uses: actions/checkout@v4
       - id: version
         run: |
-          echo "release_version=$(grep version pyproject.toml | awk -F'\"' '{print $2}')" >> "$GITHUB_OUTPUT"
+          release_version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
     outputs:
       release_version: ${{ steps.version.outputs.release_version }}
   create-tag:
