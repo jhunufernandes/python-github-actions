@@ -1,18 +1,18 @@
-name: docs
+name: docs-deploy
 on:
   workflow_call:
     inputs:
-      pip_args:
+      extras:
         required: true
         type: string
 jobs:
-  gh-deploy:
+  deploy-pages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: python-deps-${{ inputs.pip_args }}
+          name: venv-${{ inputs.extras }}
           path: .
       - run: |
           unzip venv.zip

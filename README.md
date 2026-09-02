@@ -12,17 +12,17 @@ Installs Python dependencies into a virtual environment and uploads it as an art
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `pip_args` | Yes | — | The extras key to install (e.g. `dev`, `test`, `docs`) |
+| `extras` | Yes | — | The extras key to install (e.g. `dev`, `test`, `docs`) |
 | `python_version` | No | `3.11` | Python version to use |
 
 **Usage:**
 
 ```yaml
 jobs:
-  install-deps:
+  build-venv:
     uses: jhunufernandes/python-github-actions/.github/workflows/deps.yml@main
     with:
-      pip_args: dev
+      extras: dev
 ```
 
 ---
@@ -35,22 +35,22 @@ Downloads the pre-built virtual environment artifact and runs the Python test su
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| `pip_args` | Yes | The extras key used when the deps artifact was created |
+| `extras` | Yes | The extras key used when the deps artifact was created |
 
 **Usage:**
 
 ```yaml
 jobs:
   run-tests:
-    needs: install-deps
+    needs: build-venv
     uses: jhunufernandes/python-github-actions/.github/workflows/tests.yml@main
     with:
-      pip_args: dev
+      extras: dev
 ```
 
 ---
 
-### `docs` — Deploy Documentation
+### `docs-deploy` — Deploy Documentation
 
 Downloads the pre-built virtual environment artifact and deploys MkDocs documentation to GitHub Pages.
 
@@ -58,7 +58,7 @@ Downloads the pre-built virtual environment artifact and deploys MkDocs document
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| `pip_args` | Yes | The extras key used when the deps artifact was created |
+| `extras` | Yes | The extras key used when the deps artifact was created |
 
 Expects a MkDocs configuration file at `docs/mkdocs.yml`.
 
@@ -66,11 +66,11 @@ Expects a MkDocs configuration file at `docs/mkdocs.yml`.
 
 ```yaml
 jobs:
-  deploy-docs:
-    needs: install-deps
+  deploy-pages:
+    needs: build-venv
     uses: jhunufernandes/python-github-actions/.github/workflows/docs.yml@main
     with:
-      pip_args: docs
+      extras: docs
 ```
 
 ---
@@ -91,7 +91,7 @@ jobs:
 
 ---
 
-### `auto` — Automate Issue Workflow
+### `issue-automation` — Automate Issue Workflow
 
 When triggered by an issue event, this workflow:
 
@@ -103,7 +103,7 @@ When triggered by an issue event, this workflow:
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| `pr_destiny` | Yes | The base branch for the draft pull request (e.g. `main`) |
+| `pr_base` | Yes | The base branch for the draft pull request (e.g. `main`) |
 
 **Usage:**
 
@@ -116,8 +116,60 @@ jobs:
   automate:
     uses: jhunufernandes/python-github-actions/.github/workflows/auto.yml@main
     with:
-      pr_destiny: main
+      pr_base: main
 ```
+
+---
+
+### `lint` — Lint and Type-check
+
+Installs the project and runs `ruff check` and `ty check`.
+
+**Inputs:**
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `python_version` | No | `3.11` | Python version to use |
+| `install_args` | No | `-e . --group dev` | Arguments passed to `pip install` — extras like `.[dev]` or PEP 735 dependency groups like `-e . --group dev` |
+
+**Usage:**
+
+```yaml
+jobs:
+  lint:
+    uses: jhunufernandes/python-github-actions/.github/workflows/lint.yml@main
+    with:
+      python_version: "3.14"
+```
+
+---
+
+### `docker-publish` — Build and Push a Docker Image to GHCR
+
+Builds a multi-arch image and pushes it to GHCR as `:latest` plus a short-SHA tag, logging in with the workflow's `GITHUB_TOKEN`.
+
+**Inputs:**
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `image_name` | No | Lowercased `github.repository` | Image name without the `ghcr.io/` prefix |
+| `platforms` | No | `linux/amd64,linux/arm64` | Target platforms |
+
+The calling workflow must grant `packages: write` (and `contents: read`).
+
+**Usage:**
+
+```yaml
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-image:
+    uses: jhunufernandes/python-github-actions/.github/workflows/docker.yml@main
+```
+
+---
 
 ## Example Pipeline
 
@@ -133,22 +185,22 @@ on:
     types: [opened]
 
 jobs:
-  install-deps:
+  build-venv:
     uses: jhunufernandes/python-github-actions/.github/workflows/deps.yml@main
     with:
-      pip_args: dev
+      extras: dev
 
   run-tests:
-    needs: install-deps
+    needs: build-venv
     uses: jhunufernandes/python-github-actions/.github/workflows/tests.yml@main
     with:
-      pip_args: dev
+      extras: dev
 
-  deploy-docs:
-    needs: install-deps
+  deploy-pages:
+    needs: build-venv
     uses: jhunufernandes/python-github-actions/.github/workflows/docs.yml@main
     with:
-      pip_args: docs
+      extras: docs
 
   create-release:
     needs: run-tests
@@ -158,7 +210,7 @@ jobs:
     if: github.event_name == 'issues'
     uses: jhunufernandes/python-github-actions/.github/workflows/auto.yml@main
     with:
-      pr_destiny: main
+      pr_base: main
 ```
 
 ## License

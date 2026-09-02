@@ -1,0 +1,14 @@
+name: workflow-lint
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rhysd/action-setup-actionlint@v1
+      - run: actionlint -color

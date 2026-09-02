@@ -1,25 +1,38 @@
-name: auto
+name: issue-to-pr
 on:
   workflow_call:
     inputs:
-      pr_destiny:
+      pr_base:
         required: true
         type: string
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
-  create-branch:
+  create-issue-branch:
+    outputs:
+      branch: ${{ steps.branch.outputs.branch }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: |
-          git config --global user.name github-actions[bot]
-          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - run: |
-          git checkout -b "issue/${{ github.event.issue.number }}-${{ github.event.issue.title }}"
-          git push
+      - id: branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          BRANCH="issue/${ISSUE_NUMBER}-${SLUG}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          git config --global user.name github-actions[bot]
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git checkout -b "$BRANCH"
+          git push -u origin "$BRANCH"
   assign-issue:
     runs-on: ubuntu-latest
     steps:
@@ -37,11 +50,14 @@ jobs:
             } catch (error) {
               console.error(`Failed to assign issue: ${error.message}`);
             }
-  create-draft:
-    needs: create-branch
+  create-draft-pr:
+    needs: create-issue-branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ needs.create-issue-branch.outputs.branch }}
+          PR_BASE: ${{ inputs.pr_base }}
         with:
           script: |
             try {
@@ -49,8 +65,8 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: `Draft PR for issue #${context.issue.number}`,
-                head: `issue/${{ github.event.issue.number }}-${{ github.event.issue.title }}`,
-                base: '${{ inputs.pr_destiny }}',
+                head: process.env.BRANCH,
+                base: process.env.PR_BASE,
                 draft: true
               });
               console.log(`Draft PR created for issue #${context.issue.number}`);
