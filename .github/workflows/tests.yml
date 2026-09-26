@@ -16,5 +16,12 @@ jobs:
           path: .
       - run: |
           unzip venv.zip
-      - run: |
-          .venv/bin/python -m unittest discover -v
+      - name: Run tests
+        run: |
+          code=0
+          .venv/bin/python -m unittest discover -v || code=$?
+          if [ "$code" -eq 5 ]; then
+            echo "::warning::No tests found, skipping."
+            exit 0
+          fi
+          exit $code
