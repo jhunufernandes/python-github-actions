@@ -14,8 +14,8 @@ jobs:
     if: inputs.extras
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ inputs.python_version }}
       - run: |
@@ -24,7 +24,7 @@ jobs:
           .venv/bin/python -m pip install ".[${{ inputs.extras }}]"
       - run: |
           zip -r venv.zip .venv
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: venv-${{ inputs.extras }}
           path: venv.zip
